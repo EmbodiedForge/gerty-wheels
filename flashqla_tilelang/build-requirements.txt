@@ -1,0 +1,6 @@
+build==1.6.1
+Cython==3.2.9
+scikit-build-core==1.1.1
+patchelf==0.19.1.0
+wheel==0.48.0
+z3-solver==4.15.4.0

@@ -1,0 +1,43 @@
+--- a/src/transform/thread_storage_sync.cc
++++ b/src/transform/thread_storage_sync.cc
+@@ -383,6 +383,16 @@
+   static Stmt Rewrite(Stmt stmt) {
+     arith::Analyzer analyzer;
+     ThreadPartialSyncRewriter rewriter(&analyzer);
++    PostOrderVisit(stmt, [&](const ObjectRef &node) {
++      const auto *call = node.as<CallNode>();
++      if (call && call->op.same_as(builtin::tvm_storage_sync()) &&
++          call->args.size() == 3 &&
++          (call->args[0].as<StringImmNode>()->value == "shared" ||
++           call->args[0].as<StringImmNode>()->value == "shared.dyn")) {
++        rewriter.used_barrier_ids_.insert(
++            static_cast<size_t>(call->args[1].as<IntImmNode>()->value));
++      }
++    });
+     return rewriter(std::move(stmt));
+   }
+ 
+@@ -458,9 +468,14 @@
+       return {barrier_id_map_[key], thread_count_map_[key]};
+     }
+ 
++    // Earlier storage-scope passes may already have assigned named barriers.
+     size_t barrier_id =
+-        barrier_id_map_.size() +
+         static_cast<size_t>(ReservedNamedBarriers::kFirstUsedBarrier);
++    while (used_barrier_ids_.count(barrier_id)) {
++      ++barrier_id;
++    }
++    ICHECK_LT(barrier_id, 16) << "Exhausted CUDA named barrier IDs";
++    used_barrier_ids_.insert(barrier_id);
+     size_t thread_count = extent_tx * extent_ty * extent_tz;
+ 
+     barrier_id_map_[key] = barrier_id;
+@@ -541,6 +556,7 @@
+       IterVar(Range::FromMinExtent(0, 1), Var("ty"), IterVarType::kDataPar);
+   IterVar tz_ =
+       IterVar(Range::FromMinExtent(0, 1), Var("tz"), IterVarType::kDataPar);
++  std::unordered_set<size_t> used_barrier_ids_;
+   std::unordered_map<ThreadBoundKey, size_t> barrier_id_map_;
+   std::unordered_map<ThreadBoundKey, size_t> thread_count_map_;
+ };

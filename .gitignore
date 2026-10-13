@@ -1,0 +1,13 @@
+dist/
+tmp/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.whl
+*.pt
+*.pth
+*.so
+*.cubin
+cache/
+*_cache*/

@@ -1,0 +1,30 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,13 +3,13 @@
+ 
+ cmake_minimum_required(VERSION 3.26)
+ 
++project(TILE_LANG C CXX)
++
+ # Detect CUDA toolkit: tries host installation first, then falls back to
+ # pip-installed packages (env WITH_PIP_CUDA_TOOLCHAIN or auto-detect).
+-# Must be included before project() so CMAKE_CUDA_COMPILER is set.
++# Enable C/CXX first so cached CUDA discovery can resolve its Threads dependency.
+ include(${CMAKE_CURRENT_LIST_DIR}/cmake/FindPipCUDAToolkit.cmake)
+ 
+-project(TILE_LANG C CXX)
+-
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -61,7 +61,7 @@
+ 
+ [build-system]
+ requires = [
+-    "cython>=3.1.0",
++    "cython>=3.1.0,<3.3",
+     "scikit-build-core",
+     "z3-solver>=4.13.0,<4.15.5",
+     # Not for auditwheel, explicitly add patchelf for repairing libz3.so.
